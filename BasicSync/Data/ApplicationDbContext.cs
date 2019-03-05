@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace BasicSync.Data
 {
-    class ApplicationDbContext : DbContext
+    public class ApplicationDbContext : DbContext
     {
         public DbSet<BasicEntity> BasicEntities { get; set; }
 
