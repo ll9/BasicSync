@@ -58,5 +58,15 @@ namespace BasicSync
                 e.Row.Cells[nameof(BasicEntity.RowVersion)].Value = 0;
             }
         }
+
+        private void dataGridView1_CellEndEdit(object sender, DataGridViewCellEventArgs e)
+        {
+            var dataGrid = sender as DataGridView;
+
+            if (dataGrid.Columns.Contains(nameof(BasicEntity.SyncStatus)))
+            {
+                dataGrid.Rows[e.RowIndex].Cells[nameof(BasicEntity.SyncStatus)].Value = false;
+            }
+        }
     }
 }
