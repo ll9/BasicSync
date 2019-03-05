@@ -1,5 +1,6 @@
 ﻿using BasicSync.Controllers;
 using BasicSync.Models;
+using BasicSync.Services;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -67,6 +68,11 @@ namespace BasicSync
             {
                 dataGrid.Rows[e.RowIndex].Cells[nameof(BasicEntity.SyncStatus)].Value = false;
             }
+        }
+
+        private void SyncButton_Click(object sender, EventArgs e)
+        {
+            _controller.Sync();
         }
     }
 }

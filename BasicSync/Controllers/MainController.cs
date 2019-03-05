@@ -1,4 +1,5 @@
 ﻿using BasicSync.Data;
+using BasicSync.Services;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -34,6 +35,12 @@ namespace BasicSync.Controllers
         internal void SaveChanges(DataTable dataTable)
         {
             _adoContext.Update(dataTable);
+        }
+
+        internal void Sync()
+        {
+            var syncService = new SyncService(_efContext);
+            syncService.Sync();
         }
     }
 }

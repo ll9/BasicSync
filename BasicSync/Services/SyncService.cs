@@ -1,5 +1,7 @@
 ﻿using BasicSync.Data;
 using BasicSync.Models;
+using BasicSync.Serializers;
+using RestSharp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,10 +13,13 @@ namespace BasicSync.Services
     public class SyncService
     {
         private readonly ApplicationDbContext _context;
+        private readonly RestClient _client;
 
         public SyncService(ApplicationDbContext context)
         {
             _context = context;
+            _client = new RestClient("https://localhost:44370/");
+
         }
 
         public void Sync()
@@ -32,7 +37,23 @@ namespace BasicSync.Services
 
             foreach (var change in changes)
             {
+                var method = change.RowVersion == 0 ? Method.POST : Method.PUT;
+                var request = new RestRequest("api/BasicEntities", method);
+                request.JsonSerializer = new JsonSerializer();
+                request.AddJsonBody(change);
 
+                var response = _client.Execute<BasicEntity>(request);
+
+                if (response.IsSuccessful)
+                {
+                    if (response.Data != null)
+                    {
+                        response.Data.SyncStatus = true;
+                        _context.Entry(change).State = Microsoft.EntityFrameworkCore.EntityState.Detached;
+                        _context.Entry(response.Data).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+                        _context.SaveChanges();
+                    }
+                }
             }
         }
 
