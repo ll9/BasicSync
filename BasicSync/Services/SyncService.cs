@@ -24,57 +24,56 @@ namespace BasicSync.Services
 
         public void Sync()
         {
-            pullChanges();
-            pushChanges();
-        }
+            IQueryable<BasicEntity> changes = GetChanges();
+            var maxSync = GetMaxSync();
 
-        private void pushChanges()
-        {
-            var changes = _context.BasicEntities
-                .Where(b => b.SyncStatus == false)
-                .OrderBy(b => b.RowVersion)
-                .ToList();
+            var request = new RestRequest("api/BasicEntities/{maxSync}", Method.POST);
+            request.JsonSerializer = new JsonSerializer();
+            request.AddUrlSegment("maxSync", maxSync);
+            request.AddJsonBody(changes);
 
-            foreach (var change in changes)
+            var response = _client.Execute<List<BasicEntity>>(request);
+
+            if (response.IsSuccessful && response.Data != null)
             {
-                var method = change.RowVersion == 0 ? Method.POST : Method.PUT;
-                var request = new RestRequest("api/BasicEntities", method);
-                request.JsonSerializer = new JsonSerializer();
-                request.AddJsonBody(change);
-
-                var response = _client.Execute<BasicEntity>(request);
-
-                if (response.IsSuccessful)
+                using (var context = new ApplicationDbContext())
                 {
-                    if (response.Data != null)
+                    foreach (var item in response.Data)
                     {
-                        response.Data.SyncStatus = true;
-                        _context.Entry(change).State = Microsoft.EntityFrameworkCore.EntityState.Detached;
-                        _context.Entry(response.Data).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
-                        _context.SaveChanges();
+                        item.SyncStatus = true;
+
+                        if (context.BasicEntities.Any(e => e.Id == item.Id))
+                        {
+                            context.Entry(item).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+                        }
+                        else
+                        {
+                            context.BasicEntities.Add(item);
+                        }
                     }
+                    context.SaveChanges();
                 }
             }
         }
 
-        private void pullChanges()
+        private int GetMaxSync()
         {
-            var maxSync = _context.BasicEntities
-                .Select(b => b.RowVersion)
-                .DefaultIfEmpty(0)
-                .Max();
-
-            // pull since maxSync
-
-            var changes = new List<BasicEntity>();
-
-            foreach (var change in changes)
+            using (var context = new ApplicationDbContext())
             {
-                change.SyncStatus = true;
-                _context.BasicEntities.Add(change);
+                return context.BasicEntities
+                    .Select(b => b.RowVersion)
+                    .DefaultIfEmpty(0)
+                    .Max();
             }
+        }
 
-            _context.SaveChanges();
+        private IQueryable<BasicEntity> GetChanges()
+        {
+            using (var context = new ApplicationDbContext())
+            {
+                return context.BasicEntities
+                    .Where(b => b.SyncStatus == false);
+            }
         }
     }
 }
