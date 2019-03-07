@@ -72,6 +72,10 @@ namespace BasicSync
 
         private void SyncButton_Click(object sender, EventArgs e)
         {
+            if (dataGridView1.DataSource is DataTable dataTable)
+            {
+                _controller.SaveChanges(dataTable);
+            }
             _controller.Sync();
         }
     }

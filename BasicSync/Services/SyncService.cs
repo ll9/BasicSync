@@ -24,7 +24,7 @@ namespace BasicSync.Services
 
         public void Sync()
         {
-            IQueryable<BasicEntity> changes = GetChanges();
+            ICollection<BasicEntity> changes = GetChanges();
             var maxSync = GetMaxSync();
 
             var request = new RestRequest("api/BasicEntities/{maxSync}", Method.POST);
@@ -67,12 +67,13 @@ namespace BasicSync.Services
             }
         }
 
-        private IQueryable<BasicEntity> GetChanges()
+        private ICollection<BasicEntity> GetChanges()
         {
             using (var context = new ApplicationDbContext())
             {
                 return context.BasicEntities
-                    .Where(b => b.SyncStatus == false);
+                    .Where(b => b.SyncStatus == false)
+                    .ToList();
             }
         }
     }

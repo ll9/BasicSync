@@ -41,6 +41,7 @@ namespace BasicSync.Controllers
         {
             var syncService = new SyncService(_efContext);
             syncService.Sync();
+            LoadDataGridSource();
         }
     }
 }
